@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .counter {
+            display: flex;
+            align-items: center;
+        }
+
+        .counter img {
+            align-items: flex-start;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .counter p {
+            margin-right: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+
+        #game-style {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+
+        #game-style div {
+            border: 1px dashed darkgrey;
+            width: 4%;
+            height: 4%;
+        }
+
+        #game-style div:nth-child(odd) {
+            background-color: darkgrey;
+        }
+
+        #game-style div:nth-child(even) {
+            background-color: lightgrey;
+        }
+
+        #game-style div[content="wall"] {
+            background-color: brown;
+        }
+
+        #game-style div[content="snake"] {
+            background-color: blue;
+
+
+        }
+
+        #game-style div[content="apple"] {
+            background-image: url("./Images/apple.png");
+            background-size: 100%;
+        }
+
+        #game-style div[content = "burger"] {
+            background-image: url("./Images/burger.png");
+            background-size: 100%;
+        }
+
+        #game-style div[content = "multicolor"] {
+            background-image: url("./Images/multicolor.png");
+            background-size: 100%;
+        }
+
+
+        #game-style img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+        }
+
+    </style>
+    <script>
+        let appleCounter = 0;
+        let burgerCounter = 0;
+        let multicolorCounter = 0;
+        const boardSize = 25;
+        let snakeDirection = "east";
+        const snake = [
+            [3, 12],
+            [4, 12],
+            [5, 12]
+        ];
+        let snakeLength = snake.length;
+
+        let gameInterval;
+
+        function resizeGameArea() {
+            const size = Math.min(document.body.clientHeight, document.body.clientWidth);
+            document.getElementById("game-style").style.width = size + "px";
+            document.getElementById("game-style").style.height = size + "px";
+        }
+
+        function setCellContent(x, y, content) {
+            document.getElementById(x + "," + y).setAttribute("content", content);
+        }
+
+        function getCellContent(x, y) {
+            return document.getElementById(x + "," + y).getAttribute("content");
+        }
+
+        function isCellFree(x, y) {
+            return getCellContent(x, y) === null;
+        }
+
+        function resetCellContent(x, y) {
+            document.getElementById(x + "," + y).attributeStyleMap.clear();
+            document.getElementById(x + "," + y).removeAttribute("content");
+        }
+
+
+        function init() {
+            resizeGameArea();
+
+            let content = "";
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    content += "<div id='" + x + "," + y + "'></div>";
+                }
+            }
+            document.getElementById("game-style").innerHTML = content;
+
+            for (let i = 0; i < boardSize; i++) {
+                setCellContent(i, 0, 'wall');
+                setCellContent(0, i, 'wall');
+                setCellContent(i, boardSize - 1, 'wall');
+                setCellContent(boardSize - 1, i, 'wall');
+            }
+
+            for (let coordinates of snake) {
+                setCellContent(coordinates[0], coordinates[1], 'snake');
+            }
+
+            gameInterval = setInterval(() => moveSnake(), 150);
+
+            for (let i = 0; i < 1; i++) {
+                let randomNumber = Math.floor(Math.random() * 3) + 1
+                console.log(randomNumber)
+                if (randomNumber === 1) {
+                    placeNewBurger()
+                } else if (randomNumber === 2) {
+                    placeNewApple()
+                } else {
+                    placeNewMulticolor()
+                }
+            }
+
+
+            document.addEventListener("keydown", event => changeSnakeDirection(event));
+        }
+
+        document.addEventListener("keydown", changeSnakeDirection);
+
+        function moveSnake() {
+            const head = snake.at(-1);
+            let newHead;
+            switch (snakeDirection) {
+                case "north":
+                    newHead = [head[0], head[1] - 1];
+                    break;
+                case "south":
+                    newHead = [head[0], head[1] + 1];
+                    break;
+                case "east":
+                    newHead = [head[0] + 1, head[1]];
+                    break;
+                case "west":
+                    newHead = [head[0] - 1, head[1]];
+                    break;
+                default:
+                    return;
+            }
+
+            if (getCellContent(newHead[0], newHead[1]) === "apple") {
+                placeNewApple();
+                snakeLength += 3;
+                appleCounter++;
+            } else if (getCellContent(newHead[0], newHead[1]) === "burger") {
+                placeNewBurger()
+                snakeLength *= 3;
+                burgerCounter++;
+            } else if (getCellContent(newHead[0], newHead[1]) === "multicolor") {
+                placeNewMulticolor()
+                multicolorCounter++;
+            } else if (!isCellFree(newHead[0], newHead[1])) {
+                clearInterval(gameInterval);
+                alert("Game Over!!");
+                return;
+            }
+
+            snake.push(newHead);
+            setCellContent(newHead[0], newHead[1], 'snake');
+
+            if (snake.length > snakeLength) {
+                const queue = snake.shift();
+                resetCellContent(queue[0], queue[1]);
+            }
+            document.getElementById("output1").innerHTML = appleCounter;
+            document.getElementById("output2").innerHTML = burgerCounter;
+            document.getElementById("output3").innerHTML = multicolorCounter;
+        }
+
+        function changeSnakeDirection(event) {
+            console.log(event.key);
+            if (["east", "west"].includes(snakeDirection) && event.key === "ArrowUp") {
+                snakeDirection = "north"
+            }
+            if (["east", "west"].includes(snakeDirection) && event.key === "ArrowDown") {
+                snakeDirection = "south"
+            }
+            if (["north", "south"].includes(snakeDirection) && event.key === "ArrowRight") {
+                snakeDirection = "east"
+            }
+            if (["north", "south"].includes(snakeDirection) && event.key === "ArrowLeft") {
+                snakeDirection = "west"
+            }
+        }
+
+        function randomCoordinates() {
+            let x = Math.floor(Math.random() * boardSize);
+            let y = Math.floor(Math.random() * boardSize);
+            return [x, y]
+        }
+
+        function placeNewApple() {
+            let coordinates;
+            do {
+                coordinates = randomCoordinates();
+            } while (!isCellFree(coordinates[0], coordinates[1]))
+
+            setCellContent(coordinates[0], coordinates[1], 'apple');
+        }
+
+        function placeNewBurger() {
+            let coordinates;
+            do {
+                coordinates = randomCoordinates();
+            } while (!isCellFree(coordinates[0], coordinates[1]))
+
+            setCellContent(coordinates[0], coordinates[1], 'burger');
+            console.log("Endroit du Burger: " + coordinates);
+        }
+
+        function placeNewMulticolor() {
+            let coordinates;
+            do {
+                coordinates = randomCoordinates();
+            } while (!isCellFree(coordinates[0], coordinates[1]))
+
+            setCellContent(coordinates[0], coordinates[1], 'multicolor');
+        }
+
+    </script>
+</head>
+<body onload="init()" onresize="resizeGameArea()">
+<div id="emojis">
+    <div id="appleCounter" class="counter">
+        <img src="./Images/apple.png">
+        <p id="output1"></p>
+    </div>
+    <div id="burgerCounter" class="counter">
+        <img src="./Images/burger.png">
+        <p id="output2"></p>
+    </div>
+    <div id="multicolorCounter" class="counter">
+        <img src="./Images/multicolor.png">
+        <p id="output3"></p>
+    </div>
+</div>
+
+<div id="game-border-color">
+    <div id="game-style"></div>
+</div>
+</body>
+</html>
